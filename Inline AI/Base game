@@ -1,0 +1,104 @@
+import console
+import screen # This is my text screen module (https://github.com/SlothScript/Text-Screen-Display)
+from random import randint
+
+# Might be a little buggy. (actually its really buggy, and I know, but can't track down the error. I belive its in the display code, but i don't really know)
+
+# I really don't want to rewrite everything, but I kinda have to...
+platPos = []
+playerY = 0
+roundNum = 0
+screenWidth, screenHeight = (10,8)
+
+class phatPlat:
+	def __init__(self, xpos, ypos, length):
+		self.ypos = ypos
+		self.xpos = xpos
+		self.length = length
+	
+	def updatePlat(self):
+		self.xpos -= 1
+		
+	def checkPlayerCollision(self, playerPos):
+		positions = []
+		for x in range(self.length):
+			positions.append((self.xpos + x, self.ypos))
+		if playerPos in positions:
+			return True
+		return False
+
+def newPhatPlat():
+	global lastplat
+	length = randint(3,5)
+	ypos = randint(-1,(screenHeight + 1) - lastplat)
+	platPos.append(phatPlat(screenWidth,ypos+1, length))
+	lastplat = ypos
+	return length
+	
+waittime = 3
+iterations = 0
+gamescreen = screen.screen(12,8)
+gamescreen.addDType({"player":"o", "phatplat": "#"})
+lastplat = 5
+dead = False
+while not dead:
+	if waittime == 0:
+		waittime = newPhatPlat()
+		waittime += randint(-1,1)
+	
+	if iterations < 8:
+		try:
+			playerY = platPos[0].ypos - 1
+		except:
+			playerY = 0
+	
+	data = list([eval(("[],"*gamescreen.SH)[:-1])][0])
+	for y in range(8):
+		for x in range(12):
+			if (x,y) == (6,playerY):
+				data[y].append("player")
+			for phatplat in platPos:
+				if phatplat.xpos + phatplat.length == 0:
+					platPos.pop(0)
+					continue
+				if phatplat.checkPlayerCollision((x,y)):
+					data[y].append("phatplat")
+					break
+			if len(data[y]) != x:
+				data[y].append(None)
+		
+	console.clear()
+	print(iterations)
+	gamescreen.setSData(data)
+	gamescreen.displayScreen()
+	print(platPos)
+	
+	# Update position based on input
+	move = input()
+	good = True
+	for plat in platPos:
+		if plat.checkPlayerCollision((6,playerY)):
+			dead = True
+		if plat.checkPlayerCollision((6,playerY+1)):
+			good = False
+			break
+	
+	if good:
+		playerY += 1
+	else:
+		if move == "w":
+			playerY -= 3
+	
+	# Update iterations and plats
+	# Update plats
+	for phatplat in platPos:
+		phatplat.updatePlat()
+	waittime -= 1
+	
+	# Update time
+	iterations += 1
+
+# You've died!
+console.clear()
+print("You've died! :(")
+print("Your score:",iterations)
